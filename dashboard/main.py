@@ -23,9 +23,6 @@ from proyecto_final import proyecto, transform_data, get_rsi
 #Generamos un desplegable, extraemos los datos del par elegido por el usuario
 data, pair = proyecto()
 
-#Calculamos los indicadores tecnicos
-data = transform_data(data)
-
 st.markdown('***')
 st.write(f'Trabajamos con el par: {pair}')
 
@@ -54,6 +51,7 @@ Se consideran dos tipos de Media Móvil:
 - Exponential, utilizando la función de `ewm`
 """
 
+#Calculamos la media movil
 data = transform_data(data)
 
 #Graficamos la media movil
