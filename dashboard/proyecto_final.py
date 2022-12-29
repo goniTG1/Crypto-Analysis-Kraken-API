@@ -78,24 +78,8 @@ import krakenex
 import plotly.graph_objects as go
 import plotly.express as px
 import datetime
-import calendar
-import time
 import streamlit as st
 from pykrakenapi import KrakenAPI
-
-k = krakenex.API()
-k.load_key('api-key.key')
-#q = k.query_public('AssetPairs')['result']['1INCHEUR']
-
-list_values = list(k.query_public('AssetPairs')['result'].keys())
-index_value = list_values.index('ETHUSDT')
-
-pair = st.selectbox('Select the pair you want to use: ',
-                    list_values, index=index_value)
-
-end_time = int(time.time())  # Current timestamp
-start_time = end_time - 31536000
-print(start_time)
 
 
 def data_extract(crypto, k_api):  # CONTROL DE DIVISA
@@ -103,86 +87,38 @@ def data_extract(crypto, k_api):  # CONTROL DE DIVISA
     return ohlc
 
 
-api = krakenex.API()
-kraken_api = KrakenAPI(api)
-data, _ = kraken_api.get_ohlc_data(pair, interval=1440)
-data = data.sort_index().rename(columns={"time": "date"})
+def proyecto():
 
-data['date'] = data['date'].apply(
-    lambda x: datetime.datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
+    k = krakenex.API()
+    k.load_key('api-key.key')
 
-print(data.columns)
+    list_values = list(k.query_public('AssetPairs')['result'].keys())
+    index_value = list_values.index('ETHUSDT')
 
-print('The data columns are:', data.columns)
+    pair = st.selectbox('Seleccione el par que quiere usar: ',
+                        list_values, index=index_value)
 
-# data['date'] = data['unixtime'].apply(
-#    lambda x: datetime.datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
-#data.drop(columns=['unixtime'], inplace=True)
+    api = krakenex.API()
+    kraken_api = KrakenAPI(api)
+    data, _ = kraken_api.get_ohlc_data(pair, interval=1440)
+    data = data.sort_index().rename(columns={"time": "date"})
+    data['date'] = data['date'].apply(
+        lambda x: datetime.datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
 
-st.write(f'Trabajamos con el pair: {pair}')
-
-"""## Graficar cotizaciones. Máximo
-- Graficar el par .
-- Input de usuario que permita graficar cualquier cotización o una a elegir en el menú.
-"""
-
-fig = px.line(data, x='date', y="close", title="ETH/USTD")
-st.plotly_chart(fig)
+    return data, pair
 
 
-#choose_coin = input('Please choose the coin pair you want to use: ')
+def transform_data(data):
 
-"""
-## Indicadores técnicos: 
-- Calcular el Media Móvil y graficarla.
-- Calcular el RSI y graficarlo.
-- Graficar el Media Móvil junto con la cotización del par calculado.
-"""
-
-"""
-## Rolling Window in Moving Average
-
-This plot contains a rolling window on the Moving Average.
-There are three types that are considered: Standard, Cummulative and Exponential.
-"""
-
-data['MA_price'] = data['close'].rolling(30).mean()
-data['CMA_price'] = data['close'].expanding().mean()
-data['EMA_price'] = data['close'].ewm(span=30).mean()
-data.dropna(inplace=True)
-
-fig = px.line(data, x='date', y=[
-              "MA_price", "EMA_price", "CMA_price"], title="Moving Average Comparison")
-st.plotly_chart(fig)
+    data['MA_price'] = data['close'].rolling(30).mean()
+    data['EMA_price'] = data['close'].ewm(span=30).mean()
+    data.dropna(inplace=True)
+    return data
 
 # Calculate RSI
-data['rsi'] = pta.rsi(data['close'], length=14)
+# using the pta library.
 
-"""
-# RSI
 
-Here it is clear to see the RSI in this plot
-"""
-
-fig = px.line(data, x='date', y=["rsi"], title="RSI Plot")
-st.plotly_chart(fig)
-# Graficar el Media Móvil junto con la cotización del par calculado
-
-"""
-## Moving Average vs Closing Price
-This plot displays a comparison between the Closing Price of the stock and the Moving Average value.
-"""
-
-fig = px.line(data, x='date', y=["MA_price", "close"],
-              title="Moving Average Comparison vs Closing Price")
-st.plotly_chart(fig)
-
-"""
-## Final Plot
-In this final plot we can see a comparison of all the metrics created before:
-
-"""
-
-fig = px.line(data, x='date', y=["MA_price", "close", "rsi"],
-              title="Moving Average Comparison vs Closing Price vs RSI")
-st.plotly_chart(fig)
+def get_rsi(data):
+    data['rsi'] = pta.rsi(data['close'], length=14)
+    return data
