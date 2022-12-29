@@ -82,25 +82,34 @@ import streamlit as st
 from pykrakenapi import KrakenAPI
 
 
-def data_extract(crypto, k_api):  # CONTROL DE DIVISA
+def data_extract(crypto, k_api):
+    
+    #Solicita los datos OHLC del par deseado
     ohlc, last = k_api.get_ohlc_data(crypto, interval=1440)
+    
     return ohlc
 
 
 def proyecto():
-
+    
+    #Carga la API key para conectarse a Kraken
     k = krakenex.API()
     k.load_key('api-key.key')
-
+    
+    #Solicita la lista de pares de divisas con las que opera Kraken
     list_values = list(k.query_public('AssetPairs')['result'].keys())
     index_value = list_values.index('ETHUSDT')
-
+    
+    #Genera en el dashboard un desplegable con los pares
     pair = st.selectbox('Seleccione el par que quiere usar: ',
                         list_values, index=index_value)
-
+    
+    #Solicita los datos del par elegido en el desplegable
     api = krakenex.API()
     kraken_api = KrakenAPI(api)
     data, _ = kraken_api.get_ohlc_data(pair, interval=1440)
+    
+    #Preprocesado de los datos extraidos
     data = data.sort_index().rename(columns={"time": "date"})
     data['date'] = data['date'].apply(
         lambda x: datetime.datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
@@ -109,16 +118,18 @@ def proyecto():
 
 
 def transform_data(data):
-
+    
+    #Calcula los indicadores tecnicos del enunciado
     data['MA_price'] = data['close'].rolling(30).mean()
     data['EMA_price'] = data['close'].ewm(span=30).mean()
     data.dropna(inplace=True)
+    
     return data
-
-# Calculate RSI
-# using the pta library.
 
 
 def get_rsi(data):
+    
+    #Calcula el RSI
     data['rsi'] = pta.rsi(data['close'], length=14)
+    
     return data
